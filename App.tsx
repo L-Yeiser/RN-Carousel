@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import Animated, {
   useSharedValue,
@@ -8,6 +8,8 @@ import Animated, {
   interpolate,
   Extrapolate,
   withDecay,
+  useDerivedValue,
+  runOnJS,
 } from 'react-native-reanimated';
 import {
   PanGestureHandler,
@@ -43,13 +45,29 @@ const CARD_PREVIEW = 50;
 function DragAndSnap(): React.ReactElement {
   const { width: windowWidth } = useWindowDimensions();
 
-  const cardWidth = windowWidth - (CARD_MARGIN + CARD_PREVIEW) * 2;
+  const cardWidth = windowWidth - CARD_PREVIEW * 2;
 
   const [activeIndex, setActiveIndex] = useState(0);
 
-  const translation = {
-    x: useSharedValue(CARD_PREVIEW),
+  const carouselX = useSharedValue(CARD_PREVIEW);
+
+  const currentIndex = useSharedValue(0);
+
+  const translation = useMemo(
+    () => ({
+      x: carouselX,
+    }),
+    [carouselX],
+  );
+
+  const updateIndex = (val: number) => {
+    // This would use callback
+    setActiveIndex(val);
   };
+
+  useDerivedValue(() => {
+    runOnJS(updateIndex)(currentIndex.value);
+  });
 
   const gestureHandler = useAnimatedGestureHandler<
     PanGestureHandlerGestureEvent,
@@ -57,19 +75,33 @@ function DragAndSnap(): React.ReactElement {
   >({
     onStart: (event, ctx) => {
       ctx.startX = translation.x.value;
+      console.log(
+        'ON START',
+        translation.x.value,
+        Math.round(translation.x.value / cardWidth) * cardWidth,
+      );
     },
     onActive: (event, ctx) => {
       translation.x.value = ctx.startX + event.translationX;
     },
-    onEnd: (event) => {
-      console.log(event);
-      // translation.x.value = withDecay({
-      //   velocity: event.velocityX,
-      // });
-      // translation.x.value = withSpring(0, {
-      //   overshootClamping: false,
-      //   damping: 10,
-      // });
+    onEnd: (event, ctx) => {
+      const { translationX } = event;
+      const direction = translationX / Math.abs(translationX);
+      let finalX = ctx.startX;
+
+      if (Math.abs(translationX) > cardWidth / 3) {
+        finalX = ctx.startX + direction * cardWidth;
+      }
+
+      const index = Math.abs((finalX - CARD_PREVIEW) / cardWidth);
+
+      console.log('FINAL X', finalX, index);
+
+      translation.x.value = withSpring(finalX, {
+        overshootClamping: true,
+      });
+
+      currentIndex.value = index;
     },
   });
 
@@ -85,6 +117,16 @@ function DragAndSnap(): React.ReactElement {
 
   return (
     <View style={rnStyles.container}>
+      <View
+        style={{
+          position: 'absolute',
+          top: 100,
+          left: CARD_PREVIEW,
+          width: CARD_PREVIEW,
+          height: 100,
+          backgroundColor: 'purple',
+        }}
+      />
       <PanGestureHandler onGestureEvent={gestureHandler}>
         <Animated.View style={[rnStyles.carousel, styles]}>
           {data.map((letter, index) => (
@@ -93,13 +135,21 @@ function DragAndSnap(): React.ReactElement {
               style={{
                 width: cardWidth,
                 height: 200,
-                backgroundColor: index === activeIndex ? 'blue' : 'teal',
+                backgroundColor: 'orange',
                 alignItems: 'center',
                 justifyContent: 'center',
-                marginRight: CARD_MARGIN,
+                paddingRight: CARD_MARGIN,
               }}
             >
-              <Text>{letter}</Text>
+              <View
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  backgroundColor: index === activeIndex ? 'blue' : 'teal',
+                }}
+              >
+                <Text>{letter}</Text>
+              </View>
             </Animated.View>
           ))}
         </Animated.View>
@@ -118,7 +168,5 @@ const rnStyles = StyleSheet.create({
     position: 'absolute',
     bottom: 200,
     flexDirection: 'row',
-    paddingLeft: CARD_MARGIN,
-    backgroundColor: 'yellow',
   },
 });
