@@ -42,18 +42,23 @@ const Card = ({
 
   return campground ? (
     <View style={[rnStyles.cardWrapper]}>
-      <Text>N {-2 + offset}</Text>
-      <Text>VALUE: {campground.attributes.name}</Text>
-      {!!campground.attributes['photo-url'] && (
-        <Image
-          source={{
-            uri: campground.attributes['photo-url'],
-          }}
-          style={{ width: 100, height: 100 }}
-          width={100}
-          height={100}
-        />
-      )}
+      {/* <Text>N {-2 + offset}</Text> */}
+      <View style={{ width: '100%', height: 30 }}>
+        <Text>VALUE: {campground.attributes.name}</Text>
+      </View>
+
+      <View style={{ width: 100, height: 100 }}>
+        {!!campground.attributes['photo-url'] && (
+          <Image
+            source={{
+              uri: campground.attributes['photo-url'],
+            }}
+            style={{ width: 100, height: 100 }}
+            width={100}
+            height={100}
+          />
+        )}
+      </View>
     </View>
   ) : null;
 };
@@ -63,7 +68,10 @@ function DragAndSnap(): React.ReactElement {
 
   const cardWidth = windowWidth - CARD_PREVIEW * 2;
 
-  const [activeIndex, setActiveIndex] = useState(2);
+  const [state, setState] = useState({
+    activeIndex: 2,
+    offset: 0,
+  });
 
   const currentIndex = useSharedValue(2);
 
@@ -77,7 +85,13 @@ function DragAndSnap(): React.ReactElement {
   );
 
   const updateIndex = (val: number) => {
-    setActiveIndex(val);
+    if (val !== state.activeIndex) {
+      console.log('on index changed', val);
+      setState({
+        activeIndex: val,
+        offset: (val - 2) * cardWidth,
+      });
+    }
   };
 
   useDerivedValue(() => {
@@ -118,7 +132,7 @@ function DragAndSnap(): React.ReactElement {
 
       currentIndex.value = index;
 
-      translation.x.value = ctx.startX;
+      // translation.x.value = ctx.startX;
     },
   });
 
@@ -126,13 +140,13 @@ function DragAndSnap(): React.ReactElement {
     return {
       transform: [
         {
-          translateX: translation.x.value,
+          translateX: translation.x.value + state.offset,
         },
       ],
     };
   });
 
-  console.log('ACTIVE INEX', activeIndex);
+  console.log('WTF', translation.x.value, state.offset);
 
   return (
     <View style={rnStyles.container}>
@@ -146,7 +160,7 @@ function DragAndSnap(): React.ReactElement {
               },
             ]}
           >
-            <Card currentIndex={activeIndex} offset={4} />
+            <Card currentIndex={state.activeIndex} offset={4} />
           </Animated.View>
           <Animated.View
             style={[
@@ -156,7 +170,7 @@ function DragAndSnap(): React.ReactElement {
               },
             ]}
           >
-            <Card currentIndex={activeIndex} offset={3} />
+            <Card currentIndex={state.activeIndex} offset={3} />
           </Animated.View>
           <Animated.View
             style={[
@@ -166,7 +180,7 @@ function DragAndSnap(): React.ReactElement {
               },
             ]}
           >
-            <Card currentIndex={activeIndex} offset={2} />
+            <Card currentIndex={state.activeIndex} offset={2} />
           </Animated.View>
           <Animated.View
             style={[
@@ -176,7 +190,7 @@ function DragAndSnap(): React.ReactElement {
               },
             ]}
           >
-            <Card currentIndex={activeIndex} offset={1} />
+            <Card currentIndex={state.activeIndex} offset={1} />
           </Animated.View>
           <Animated.View
             style={[
@@ -186,31 +200,8 @@ function DragAndSnap(): React.ReactElement {
               },
             ]}
           >
-            <Card currentIndex={activeIndex} offset={0} />
+            <Card currentIndex={state.activeIndex} offset={0} />
           </Animated.View>
-          {/* {campgroundSearchResults.map((letter, index) => (
-            <Animated.View
-              key={letter}
-              style={{
-                width: cardWidth,
-                height: 200,
-                backgroundColor: 'orange',
-                alignItems: 'center',
-                justifyContent: 'center',
-                paddingRight: CARD_MARGIN,
-              }}
-            >
-              <View
-                style={{
-                  width: '100%',
-                  height: '100%',
-                  backgroundColor: index === activeIndex ? 'blue' : 'teal',
-                }}
-              >
-                <Text>{letter}</Text>
-              </View>
-            </Animated.View>
-          ))} */}
         </Animated.View>
       </PanGestureHandler>
     </View>
