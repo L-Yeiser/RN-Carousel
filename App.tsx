@@ -1,5 +1,5 @@
-import React from 'react';
-import { View } from 'react-native';
+import React, { useState } from 'react';
+import { StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import Animated, {
   useSharedValue,
   withSpring,
@@ -7,75 +7,118 @@ import Animated, {
   useAnimatedGestureHandler,
   interpolate,
   Extrapolate,
+  withDecay,
 } from 'react-native-reanimated';
 import {
   PanGestureHandler,
   PanGestureHandlerGestureEvent,
 } from 'react-native-gesture-handler';
 
+const data = [
+  'A',
+  'B',
+  'C',
+  'D',
+  'E',
+  'F',
+  'G',
+  'H',
+  'I',
+  'J',
+  'K',
+  'L',
+  'M',
+  'N',
+  'O',
+  'P',
+];
+
+type AnimatedGHContext = {
+  startX: number;
+};
+
+const CARD_MARGIN = 24;
+const CARD_PREVIEW = 50;
+
 function DragAndSnap(): React.ReactElement {
+  const { width: windowWidth } = useWindowDimensions();
+
+  const cardWidth = windowWidth - (CARD_MARGIN + CARD_PREVIEW) * 2;
+
+  const [activeIndex, setActiveIndex] = useState(0);
+
   const translation = {
-    x: useSharedValue(0),
-    y: useSharedValue(0),
+    x: useSharedValue(CARD_PREVIEW),
   };
-  type AnimatedGHContext = {
-    startX: number;
-    startY: number;
-  };
+
   const gestureHandler = useAnimatedGestureHandler<
     PanGestureHandlerGestureEvent,
     AnimatedGHContext
   >({
-    onStart: (_, ctx) => {
+    onStart: (event, ctx) => {
       ctx.startX = translation.x.value;
-      ctx.startY = translation.y.value;
     },
     onActive: (event, ctx) => {
       translation.x.value = ctx.startX + event.translationX;
-      translation.y.value = ctx.startY + event.translationY;
     },
-    onEnd: (_) => {
-      translation.x.value = withSpring(0);
-      translation.y.value = withSpring(0);
+    onEnd: (event) => {
+      console.log(event);
+      // translation.x.value = withDecay({
+      //   velocity: event.velocityX,
+      // });
+      // translation.x.value = withSpring(0, {
+      //   overshootClamping: false,
+      //   damping: 10,
+      // });
     },
   });
 
-  const stylez = useAnimatedStyle(() => {
-    const H = Math.round(
-      interpolate(translation.x.value, [0, 300], [0, 360], Extrapolate.CLAMP)
-    );
-    const S = Math.round(
-      interpolate(translation.y.value, [0, 500], [100, 50], Extrapolate.CLAMP)
-    );
-    const backgroundColor = `hsl(${H},${S}%,50%)`;
+  const styles = useAnimatedStyle(() => {
     return {
       transform: [
         {
           translateX: translation.x.value,
         },
-        {
-          translateY: translation.y.value,
-        },
       ],
-      backgroundColor,
     };
   });
 
   return (
-    <View style={{ flex: 1, margin: 50 }}>
+    <View style={rnStyles.container}>
       <PanGestureHandler onGestureEvent={gestureHandler}>
-        <Animated.View
-          style={[
-            {
-              width: 40,
-              height: 40,
-            },
-            stylez,
-          ]}
-        />
+        <Animated.View style={[rnStyles.carousel, styles]}>
+          {data.map((letter, index) => (
+            <Animated.View
+              key={letter}
+              style={{
+                width: cardWidth,
+                height: 200,
+                backgroundColor: index === activeIndex ? 'blue' : 'teal',
+                alignItems: 'center',
+                justifyContent: 'center',
+                marginRight: CARD_MARGIN,
+              }}
+            >
+              <Text>{letter}</Text>
+            </Animated.View>
+          ))}
+        </Animated.View>
       </PanGestureHandler>
     </View>
   );
 }
 
 export default DragAndSnap;
+
+const rnStyles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  carousel: {
+    position: 'absolute',
+    bottom: 200,
+    flexDirection: 'row',
+    paddingLeft: CARD_MARGIN,
+    backgroundColor: 'yellow',
+  },
+});
