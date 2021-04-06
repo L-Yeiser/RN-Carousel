@@ -32,18 +32,17 @@ const CARD_MARGIN = 24;
 const CARD_PREVIEW = 50;
 
 const Card = ({
-  offset,
-  currentIndex,
+  campground,
+  index,
 }: {
-  offset: number;
-  currentIndex: number;
+  campground: typeof campgroundSearchResults[0];
+  index: number;
 }) => {
-  const campground = campgroundSearchResults[currentIndex - offset];
-
   return campground ? (
     <View style={[rnStyles.cardWrapper]}>
       {/* <Text>N {-2 + offset}</Text> */}
       <View style={{ width: '100%', height: 30 }}>
+        <Text>index: {index}</Text>
         <Text>VALUE: {campground.attributes.name}</Text>
       </View>
 
@@ -69,27 +68,29 @@ function DragAndSnap(): React.ReactElement {
   const cardWidth = windowWidth - CARD_PREVIEW * 2;
 
   const [state, setState] = useState({
-    activeIndex: 2,
+    activeIndex: 0,
     offset: 0,
   });
 
-  const currentIndex = useSharedValue(2);
+  const currentIndex = useSharedValue(0);
 
   const carouselX = useSharedValue(-(cardWidth * 2 - CARD_PREVIEW));
 
-  const translation = useMemo(
-    () => ({
-      x: carouselX,
-    }),
-    [carouselX],
-  );
+  const translation = {
+    x: useSharedValue(CARD_PREVIEW),
+  };
 
-  const updateIndex = (val: number) => {
-    if (val !== state.activeIndex) {
-      console.log('on index changed', val);
+  const updateIndex = (index: number) => {
+    if (index !== state.activeIndex) {
+      let offset = 0;
+
+      if (index > 2) {
+        offset = (index - 2) * cardWidth;
+      }
       setState({
-        activeIndex: val,
-        offset: (val - 2) * cardWidth,
+        activeIndex: index,
+        offset,
+        // offset: (val - 2) * cardWidth,
       });
     }
   };
@@ -124,15 +125,11 @@ function DragAndSnap(): React.ReactElement {
         index = index - direction;
       }
 
-      // const index = Math.abs((finalX - CARD_PREVIEW) / cardWidth);
-
       translation.x.value = withSpring(finalX, {
         overshootClamping: true,
       });
 
       currentIndex.value = index;
-
-      // translation.x.value = ctx.startX;
     },
   });
 
@@ -152,56 +149,23 @@ function DragAndSnap(): React.ReactElement {
     <View style={rnStyles.container}>
       <PanGestureHandler onGestureEvent={gestureHandler}>
         <Animated.View style={[rnStyles.carousel, styles]}>
-          <Animated.View
-            style={[
-              rnStyles.card,
-              {
-                width: cardWidth,
-              },
-            ]}
-          >
-            <Card currentIndex={state.activeIndex} offset={4} />
-          </Animated.View>
-          <Animated.View
-            style={[
-              rnStyles.card,
-              {
-                width: cardWidth,
-              },
-            ]}
-          >
-            <Card currentIndex={state.activeIndex} offset={3} />
-          </Animated.View>
-          <Animated.View
-            style={[
-              rnStyles.card,
-              {
-                width: cardWidth,
-              },
-            ]}
-          >
-            <Card currentIndex={state.activeIndex} offset={2} />
-          </Animated.View>
-          <Animated.View
-            style={[
-              rnStyles.card,
-              {
-                width: cardWidth,
-              },
-            ]}
-          >
-            <Card currentIndex={state.activeIndex} offset={1} />
-          </Animated.View>
-          <Animated.View
-            style={[
-              rnStyles.card,
-              {
-                width: cardWidth,
-              },
-            ]}
-          >
-            <Card currentIndex={state.activeIndex} offset={0} />
-          </Animated.View>
+          {campgroundSearchResults.map((result, index) => {
+            if (Math.abs(state.activeIndex - index) < 3) {
+              return (
+                <Animated.View
+                  style={[
+                    rnStyles.card,
+                    {
+                      width: cardWidth,
+                    },
+                  ]}
+                >
+                  <Card campground={result} index={index} />
+                </Animated.View>
+              );
+            }
+            return null;
+          })}
         </Animated.View>
       </PanGestureHandler>
     </View>
