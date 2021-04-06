@@ -1,5 +1,11 @@
 import React, { useMemo, useState } from 'react';
-import { StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import {
+  Image,
+  StyleSheet,
+  Text,
+  useWindowDimensions,
+  View,
+} from 'react-native';
 import Animated, {
   useSharedValue,
   withSpring,
@@ -16,24 +22,7 @@ import {
   PanGestureHandlerGestureEvent,
 } from 'react-native-gesture-handler';
 
-const data = [
-  'A',
-  'B',
-  'C',
-  'D',
-  'E',
-  'F',
-  'G',
-  'H',
-  'I',
-  'J',
-  'K',
-  'L',
-  'M',
-  'N',
-  'O',
-  'P',
-];
+import campgroundSearchResults from './campgroundSearchResults';
 
 type AnimatedGHContext = {
   startX: number;
@@ -42,16 +31,43 @@ type AnimatedGHContext = {
 const CARD_MARGIN = 24;
 const CARD_PREVIEW = 50;
 
+const Card = ({
+  offset,
+  currentIndex,
+}: {
+  offset: number;
+  currentIndex: number;
+}) => {
+  const campground = campgroundSearchResults[currentIndex - offset];
+
+  return campground ? (
+    <View style={[rnStyles.cardWrapper]}>
+      <Text>N {-2 + offset}</Text>
+      <Text>VALUE: {campground.attributes.name}</Text>
+      {!!campground.attributes['photo-url'] && (
+        <Image
+          source={{
+            uri: campground.attributes['photo-url'],
+          }}
+          style={{ width: 100, height: 100 }}
+          width={100}
+          height={100}
+        />
+      )}
+    </View>
+  ) : null;
+};
+
 function DragAndSnap(): React.ReactElement {
   const { width: windowWidth } = useWindowDimensions();
 
   const cardWidth = windowWidth - CARD_PREVIEW * 2;
 
-  const [activeIndex, setActiveIndex] = useState(0);
+  const [activeIndex, setActiveIndex] = useState(2);
 
-  const carouselX = useSharedValue(CARD_PREVIEW);
+  const currentIndex = useSharedValue(2);
 
-  const currentIndex = useSharedValue(0);
+  const carouselX = useSharedValue(-(cardWidth * 2 - CARD_PREVIEW));
 
   const translation = useMemo(
     () => ({
@@ -61,7 +77,6 @@ function DragAndSnap(): React.ReactElement {
   );
 
   const updateIndex = (val: number) => {
-    // This would use callback
     setActiveIndex(val);
   };
 
@@ -88,20 +103,22 @@ function DragAndSnap(): React.ReactElement {
       const { translationX } = event;
       const direction = translationX / Math.abs(translationX);
       let finalX = ctx.startX;
+      let index = currentIndex.value;
 
       if (Math.abs(translationX) > cardWidth / 3) {
         finalX = ctx.startX + direction * cardWidth;
+        index = index - direction;
       }
 
-      const index = Math.abs((finalX - CARD_PREVIEW) / cardWidth);
-
-      console.log('FINAL X', finalX, index);
+      // const index = Math.abs((finalX - CARD_PREVIEW) / cardWidth);
 
       translation.x.value = withSpring(finalX, {
         overshootClamping: true,
       });
 
       currentIndex.value = index;
+
+      translation.x.value = ctx.startX;
     },
   });
 
@@ -115,21 +132,63 @@ function DragAndSnap(): React.ReactElement {
     };
   });
 
+  console.log('ACTIVE INEX', activeIndex);
+
   return (
     <View style={rnStyles.container}>
-      <View
-        style={{
-          position: 'absolute',
-          top: 100,
-          left: CARD_PREVIEW,
-          width: CARD_PREVIEW,
-          height: 100,
-          backgroundColor: 'purple',
-        }}
-      />
       <PanGestureHandler onGestureEvent={gestureHandler}>
         <Animated.View style={[rnStyles.carousel, styles]}>
-          {data.map((letter, index) => (
+          <Animated.View
+            style={[
+              rnStyles.card,
+              {
+                width: cardWidth,
+              },
+            ]}
+          >
+            <Card currentIndex={activeIndex} offset={4} />
+          </Animated.View>
+          <Animated.View
+            style={[
+              rnStyles.card,
+              {
+                width: cardWidth,
+              },
+            ]}
+          >
+            <Card currentIndex={activeIndex} offset={3} />
+          </Animated.View>
+          <Animated.View
+            style={[
+              rnStyles.card,
+              {
+                width: cardWidth,
+              },
+            ]}
+          >
+            <Card currentIndex={activeIndex} offset={2} />
+          </Animated.View>
+          <Animated.View
+            style={[
+              rnStyles.card,
+              {
+                width: cardWidth,
+              },
+            ]}
+          >
+            <Card currentIndex={activeIndex} offset={1} />
+          </Animated.View>
+          <Animated.View
+            style={[
+              rnStyles.card,
+              {
+                width: cardWidth,
+              },
+            ]}
+          >
+            <Card currentIndex={activeIndex} offset={0} />
+          </Animated.View>
+          {/* {campgroundSearchResults.map((letter, index) => (
             <Animated.View
               key={letter}
               style={{
@@ -151,7 +210,7 @@ function DragAndSnap(): React.ReactElement {
                 <Text>{letter}</Text>
               </View>
             </Animated.View>
-          ))}
+          ))} */}
         </Animated.View>
       </PanGestureHandler>
     </View>
@@ -168,5 +227,19 @@ const rnStyles = StyleSheet.create({
     position: 'absolute',
     bottom: 200,
     flexDirection: 'row',
+  },
+  card: {
+    height: 200,
+    backgroundColor: 'orange',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingRight: CARD_MARGIN,
+  },
+  cardWrapper: {
+    width: '100%',
+    height: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'teal',
   },
 });
