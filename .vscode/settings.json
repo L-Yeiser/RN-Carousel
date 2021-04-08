@@ -1,0 +1,17 @@
+{
+  "workbench.settings.editor": "json",
+  "workbench.settings.useSplitJSON": true,
+  "emmet.includeLanguages": {
+    "javascript": "javascriptreact"
+  },
+  "workbench.tips.enabled": true,
+  "editor.parameterHints.enabled": true,
+  "prettier.requireConfig": true,
+  "editor.formatOnSave": true,
+  "vsintellicode.typescript.completionsEnabled": true,
+  "typescript.validate.enable": true,
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "[javascript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  }
+}
